@@ -2,6 +2,16 @@
 
 namespace lane_follow
 {
+LaneFollow::LaneFollow(
+  const std::vector<int64> & lower_boundary, const std::vector<int64> & upper_boundary,
+  const double max_contour_area)
+{
+  //   lower_boundary_ = lower_boundary;
+  //   upper_boundary_ = upper_boundary;
+  lower_boundary_ = cv::Scalar(lower_boundary[0], lower_boundary[1], lower_boundary[2]);
+  upper_boundary_ = cv::Scalar(upper_boundary[0], upper_boundary[1], upper_boundary[2]);
+  max_contour_area_ = max_contour_area;
+}
 cv::Mat LaneFollow::preProcess(const cv::Mat & image)
 {
   cv::Mat hls_img;
@@ -16,7 +26,7 @@ cv::Mat LaneFollow::preProcess(const cv::Mat & image)
   //   cv::dilate(hsv_img, dilate_img, kernel);   // 膨胀
   //   cv::erode(dilate_img, erode_img, kernel);  // 腐蚀
   // 会根据颜色阈值来创建一个mask，然后用这个mask去和原始图片比对得到结果
-  cv::inRange(hls_img, lower_boundary, upper_boundary, binary_img);
+  cv::inRange(hls_img, lower_boundary_, upper_boundary_, binary_img);
   auto element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(8, 5));
   cv::morphologyEx(binary_img, binary_img, cv::MORPH_CLOSE, element);  // 闭运算就是先膨胀后腐蚀
 
@@ -39,22 +49,22 @@ std::vector<cv::Point> LaneFollow::getMaxContour(const cv::Mat & image)
   return max_contour;
 }
 
-std::vector<std::vector<cv::Point>> LaneFollow::getContours(const cv::Mat & image)
-{
-  using std::vector;
-  vector<vector<cv::Point>> contours;
-  vector<cv::Vec4i> hierarchy;
-  cv::findContours(image, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+// std::vector<std::vector<cv::Point>> LaneFollow::getContours(const cv::Mat & image)
+// {
+//   using std::vector;
+//   vector<vector<cv::Point>> contours;
+//   vector<cv::Vec4i> hierarchy;
+//   cv::findContours(image, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
-  vector<bool> remove_flag(contours.size());
+//   vector<bool> remove_flag(contours.size());
 
-  vector<vector<cv::Point>> contours_result;
-  contours_result.reserve(contours.size());
-  for (int i = 0; i < contours.size(); ++i) {
-    if (remove_flag[i]) continue;
-    auto & contour = contours[i];
-    if (cv::contourArea(contour) > max_contour_area || contour.size() < 20) remove_flag[i] = true;
-    contours_result.emplace_back(contour);
-  }
-}
+//   vector<vector<cv::Point>> contours_result;
+//   contours_result.reserve(contours.size());
+//   for (size_t i = 0; i < contours.size(); ++i) {
+//     if (remove_flag[i]) continue;
+//     auto & contour = contours[i];
+//     if (cv::contourArea(contour) > max_contour_area_ || contour.size() < 20) remove_flag[i] =
+//     true; contours_result.emplace_back(contour);
+//   }
+// }
 }  // namespace lane_follow
